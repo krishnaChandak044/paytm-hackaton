@@ -83,13 +83,12 @@ async def interpret_debit_pattern(data: DebitPatternRequest) -> DebitPatternInte
     if not key:
         raise HTTPException(status_code=503, detail="Sarvam AI is not configured.")
     prompt = (
-        "Classify this repeating debit as one of possible_supplier, possible_rent, possible_salary, "
-        "possible_emi, possible_personal, or unclear. Treat the label as weak evidence only: "
-        "never claim purpose as fact and prefer unclear when ambiguous. Do not infer the payee's identity. "
-        "Return only JSON with category_hint, explanation (one short sentence using only supplied evidence), "
-        "and confidence (low/medium). Merchant must confirm. Pattern: "
-        f"payee label={data.counterparty!r}; amount range={data.amount_min_paise}-{data.amount_max_paise} paise; "
-        f"observed payment dates={[d.isoformat() for d in data.payment_dates]}"
+        "Return JSON only: category_hint (possible_supplier, possible_rent, possible_salary, "
+        "possible_emi, possible_personal, or unclear), explanation (one short sentence), "
+        "confidence (low or medium). Purpose is unconfirmed; the label is weak evidence. "
+        "Use unclear if uncertain. Do not infer identity. "
+        f"Payee label: {data.counterparty!r}. Amount: {data.amount_min_paise}-{data.amount_max_paise} paise. "
+        f"Dates: {', '.join(d.isoformat() for d in data.payment_dates)}."
     )
     try:
         async with httpx.AsyncClient(timeout=20) as client:
@@ -99,11 +98,13 @@ async def interpret_debit_pattern(data: DebitPatternRequest) -> DebitPatternInte
                 json={
                     "model": "sarvam-105b",
                     "messages": [{"role": "user", "content": prompt}],
-                    "max_tokens": 1200,
+                    "max_tokens": 1800,
                 },
             )
             response.raise_for_status()
-            content = response.json()["choices"][0]["message"]["content"]
+            content = response.json()["choices"][0]["message"].get("content")
+        if not isinstance(content, str) or not content.strip():
+            raise ValueError("AI returned no interpretation")
         raw = json.loads(content.strip().removeprefix("```json").removesuffix("```").strip())
         result = DebitPatternInterpretation(**raw)
         if result.category_hint not in {
