@@ -1,5 +1,11 @@
 import random
+import sys
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+src_path = str(Path(__file__).resolve().parent / "src")
+if src_path not in sys.path:
+    sys.path.insert(0, src_path)
 
 from munim.db import SessionLocal, init_db
 from munim.models import Merchant, Obligation

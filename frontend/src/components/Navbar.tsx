@@ -34,7 +34,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             {isLive ? (
               <>
                 <Server className="w-3 h-3 text-green-400" />
-                <span className="text-green-300 font-medium">Live FastAPI Backend (Port 8001)</span>
+                <span className="text-green-300 font-medium">Live FastAPI Backend</span>
               </>
             ) : (
               <>

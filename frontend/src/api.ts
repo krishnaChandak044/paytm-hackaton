@@ -16,7 +16,7 @@ import {
   defaultDueDate 
 } from './mockData';
 
-const BASE_URL = '';
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 export const DEMO_MERCHANTS = [
   { id: 'shop1', name: 'Sharma General Store' },
   { id: 'shop2', name: 'Mehta Provision Store' },
@@ -177,13 +177,13 @@ class ApiService {
       }
 
       this.isLiveBackend = true;
-      return { success: true, message: 'Connected to live Paytm Munim backend at http://127.0.0.1:8001' };
+      return { success: true, message: 'Connected to live Paytm Munim backend' };
     } catch (err: any) {
       this.isLiveBackend = false;
       this.token = null;
       return { 
         success: false, 
-        message: 'Could not connect to Paytm Munim backend at http://127.0.0.1:8001. Start it with uvicorn!' 
+        message: 'Could not connect to Paytm Munim backend. Ensure the backend service is running.' 
       };
     }
   }
