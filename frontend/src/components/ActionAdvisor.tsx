@@ -10,9 +10,13 @@ interface ActionAdvisorProps {
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   DECLARE_CASH: <Wallet className="w-5 h-5 text-emerald-600" />,
+  VERIFY_COVERAGE: <Wallet className="w-5 h-5 text-emerald-600" />,
   SPLIT_PAYMENT: <Split className="w-5 h-5 text-[#00baf2]" />,
+  SUPPLIER_SPLIT: <Split className="w-5 h-5 text-[#00baf2]" />,
   SHIFT_DATE: <CalendarClock className="w-5 h-5 text-purple-600" />,
   PAYTM_EARLY_SETTLEMENT: <Zap className="w-5 h-5 text-amber-500" />,
+  PAYTM_BRIDGE_OVERDRAFT: <Zap className="w-5 h-5 text-amber-500" />,
+  SETTLEMENT_REVIEW: <Lightbulb className="w-5 h-5 text-[#002970]" />,
 };
 
 export const ActionAdvisor: React.FC<ActionAdvisorProps> = ({ advice, lang, onSelectAction }) => {

@@ -46,7 +46,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
       <div className="flex items-center justify-around">
         {tabs.map((tab) => {
           const Icon = tab.icon;
-          const isActive = activeTab === tab.id;
+          const isActive = activeTab === tab.id || (tab.id === 'radar' && activeTab === 'simulator');
 
           if (tab.highlight) {
             return (
