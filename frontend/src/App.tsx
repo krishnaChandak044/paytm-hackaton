@@ -12,7 +12,7 @@ import { SettlementTracker } from './components/SettlementTracker';
 import { api, DEMO_MERCHANTS } from './api';
 import { ForecastOut, CandidateObligation, UnmatchedSettlement, Advice, Obligation } from './types';
 import { mockForecast, mockAdvice, mockCandidates, mockUnmatched, mockObligations, defaultDueDate } from './mockData';
-import { Smartphone, Monitor, Sparkles } from 'lucide-react';
+import { Smartphone, Monitor, Sparkles, X, PlusCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 export const App: React.FC = () => {
@@ -31,6 +31,12 @@ export const App: React.FC = () => {
   const [candidates, setCandidates] = useState<CandidateObligation[]>(mockCandidates);
   const [unmatched, setUnmatched] = useState<UnmatchedSettlement[]>(mockUnmatched);
   const [activeLoanRef, setActiveLoanRef] = useState<string | null>(null);
+  const [addPaymentModalOpen, setAddPaymentModalOpen] = useState(false);
+  const [newPaymentDraft, setNewPaymentDraft] = useState({
+    payee: '',
+    amountRs: '',
+    dueDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+  });
 
   useEffect(() => {
     // Attempt connecting to live FastAPI backend on launch
@@ -165,61 +171,70 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleAddPayment = async () => {
-    const payee = window.prompt('Who needs to be paid?');
-    if (!payee?.trim()) return;
-    const amountText = window.prompt('How much is due? Enter rupees.');
-    const amount = Number(amountText?.replace(/,/g, '').trim());
-    if (!Number.isFinite(amount) || amount <= 0) {
-      showToast('Enter a valid payment amount to add it.');
+  const handleAddPayment = () => {
+    setNewPaymentDraft({
+      payee: '',
+      amountRs: '',
+      dueDate: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
+    });
+    setAddPaymentModalOpen(true);
+  };
+
+  const handleSaveNewPayment = async () => {
+    const { payee, amountRs, dueDate } = newPaymentDraft;
+    if (!payee.trim()) {
+      showToast('Enter payee name');
       return;
     }
-    const suggestedDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-    const dueDate = window.prompt('When is it due? Use YYYY-MM-DD.', suggestedDate);
+    const amt = Number(amountRs.replace(/,/g, '').trim());
+    if (!Number.isFinite(amt) || amt <= 0) {
+      showToast('Enter a valid amount');
+      return;
+    }
     if (!dueDate || !/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
-      showToast('Enter the due date as YYYY-MM-DD.');
+      showToast('Enter a valid due date');
       return;
     }
     try {
-      const created = await api.createObligation(payee.trim(), Math.round(amount * 100), dueDate);
+      const created = await api.createObligation(payee.trim(), Math.round(amt * 100), dueDate);
       setObligations((previous) => [created, ...previous]);
       const refreshed = await api.getForecast(created.id);
       setBaseForecast(refreshed);
       setCurrentForecast(refreshed);
-      showToast(`Added ${created.payee} as a merchant-confirmed payment.`);
+      setAddPaymentModalOpen(false);
+      showToast(`Added ${created.payee} payment obligation.`);
     } catch (error) {
-      showToast(`Could not add payment: ${error instanceof Error ? error.message : 'please try again'}`);
+      showToast(`Could not add payment: ${error instanceof Error ? error.message : 'try again'}`);
     }
   };
 
   const handleQuickSolve = (action: 'cash' | 'split' | 'date') => {
     if (action === 'cash') {
-      const value = window.prompt('How much cash is available in the shop and can be used for this payment? Enter rupees.');
-      if (!value) return;
-      const rupees = Number(value.replace(/,/g, '').trim());
-      if (!Number.isFinite(rupees) || rupees < 0) { showToast('Enter a valid cash amount.'); return; }
-      handleRunScenario(Math.round(rupees * 100));
-      setActiveTab('simulator');
+      handleRunScenario(1700000);
+      showToast('Applied +₹17,000 cash scenario');
     } else if (action === 'split') {
-      setActiveTab('simulator');
-      showToast('Choose “Model first payment” to see the first instalment estimate.');
+      handleRunScenario(0, Math.round(baseForecast.obligation_amount_paise / 2));
+      showToast('Modeled 50% upfront payment');
     } else if (action === 'date') {
       const d = new Date(baseForecast.due_date);
       d.setDate(d.getDate() + 1);
       handleRunScenario(0, undefined, d.toISOString().split('T')[0]);
+      showToast('Modeled 1-day payment shift');
     }
   };
 
   const handleSelectAction = (code: string) => {
-    if (code === 'DECLARE_CASH') {
+    if (code === 'DECLARE_CASH' || code === 'VERIFY_COVERAGE') {
       setActiveTab('simulator');
-      showToast('Enter the cash amount you have counted in the shop.');
-    } else if (code === 'SPLIT_PAYMENT') {
+      showToast('Test drawer cash or custom balances');
+    } else if (code === 'SPLIT_PAYMENT' || code === 'SUPPLIER_SPLIT') {
+      handleRunScenario(0, Math.round(baseForecast.obligation_amount_paise / 2));
       setActiveTab('simulator');
-      showToast('Review the first instalment scenario in the simulator.');
-    } else if (code === 'PAYTM_EARLY_SETTLEMENT') {
-      showToast('Settlement timing is not connected in this demo, so it is not added to the forecast.');
-      setActiveTab('settlement');
+      showToast('Modeled 50% upfront split');
+    } else if (code === 'PAYTM_BRIDGE_OVERDRAFT') {
+      handleActivateBridgeCredit(1500000);
+    } else if (code === 'PAYTM_EARLY_SETTLEMENT' || code === 'SETTLEMENT_REVIEW') {
+      setActiveTab('actions');
     }
   };
 
@@ -389,6 +404,80 @@ export const App: React.FC = () => {
           candidateCount={candidates.length}
           lang={lang}
         />
+
+        {/* Add Payment In-App Modal */}
+        {addPaymentModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 backdrop-blur-xs p-4 animate-fade-in">
+            <div className="w-full max-w-sm rounded-3xl bg-white p-5 shadow-2xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-blue-100 text-[#002970]">
+                    <PlusCircle className="w-4 h-4 text-[#002970]" />
+                  </div>
+                  <div>
+                    <h4 className="font-extrabold text-sm text-[#002970]">Add Upcoming Payment</h4>
+                    <p className="text-[10px] text-slate-500">Track a new supplier obligation</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setAddPaymentModalOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase">Supplier / Payee Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Ramesh FMCG Distributors"
+                    value={newPaymentDraft.payee}
+                    onChange={(e) => setNewPaymentDraft({ ...newPaymentDraft, payee: e.target.value })}
+                    className="w-full mt-1 p-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#00baf2]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase">Amount (₹)</label>
+                  <input
+                    type="number"
+                    placeholder="e.g. 25000"
+                    value={newPaymentDraft.amountRs}
+                    onChange={(e) => setNewPaymentDraft({ ...newPaymentDraft, amountRs: e.target.value })}
+                    className="w-full mt-1 p-2.5 rounded-xl border border-slate-300 text-sm font-black font-mono text-[#002970] focus:outline-none focus:ring-2 focus:ring-[#00baf2]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-600 uppercase">Due Date</label>
+                  <input
+                    type="date"
+                    value={newPaymentDraft.dueDate}
+                    onChange={(e) => setNewPaymentDraft({ ...newPaymentDraft, dueDate: e.target.value })}
+                    className="w-full mt-1 p-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#00baf2]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setAddPaymentModalOpen(false)}
+                  className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 active:scale-95 transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveNewPayment}
+                  className="flex-1 py-2.5 rounded-xl bg-[#002970] text-white text-xs font-bold active:scale-95 transition-all shadow-md hover:bg-[#001e54]"
+                >
+                  Add to Radar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
