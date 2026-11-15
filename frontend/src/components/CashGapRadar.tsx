@@ -11,9 +11,9 @@ import {
   Wallet,
   HelpCircle,
 } from 'lucide-react';
-import { ForecastOut, BridgeCreditResult } from '../types';
+import { ForecastOut } from '../types';
 import { BlindSpotBanner } from './BlindSpotBanner';
-import { PaytmBridgeCard } from './PaytmBridgeCard';
+import { LoanOptionsCard } from './LoanOptionsCard';
 
 interface CashGapRadarProps {
   forecast: ForecastOut;
@@ -22,9 +22,6 @@ interface CashGapRadarProps {
   onQuickSolve?: (action: 'cash' | 'split' | 'date') => void;
   onAddPayment?: () => void;
   onDeclareExtra?: (totalPaise: number) => void;
-  onActivateBridgeCredit?: (amountPaise: number) => Promise<BridgeCreditResult | void>;
-  onResetBridgeCredit?: () => void;
-  activeLoanRef?: string | null;
 }
 
 const fmt = (paise: number | null | undefined) => {
@@ -39,9 +36,6 @@ export const CashGapRadar: React.FC<CashGapRadarProps> = ({
   onOpenPlayground,
   onQuickSolve,
   onDeclareExtra,
-  onActivateBridgeCredit,
-  onResetBridgeCredit,
-  activeLoanRef,
 }) => {
   const isHi = lang === 'hi';
   const { obligation_amount_paise: obl, balance_paise: bal,
@@ -153,16 +147,14 @@ export const CashGapRadar: React.FC<CashGapRadarProps> = ({
           </div>
         </div>
 
-        {/* Paytm 3-Day Micro-Bridge Overdraft Offer */}
-        {onActivateBridgeCredit && ((ready && !safe) || activeLoanRef) && (
-          <PaytmBridgeCard
-            gapAmountPaise={gapHigh ?? 1500000}
-            lang={lang}
-            onActivate={onActivateBridgeCredit}
-            onReset={onResetBridgeCredit}
-            activeLoanRef={activeLoanRef}
-          />
+        {ready && !safe && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[10px] leading-relaxed text-amber-950">
+            <b className="block text-[11px]">What this gap means</b>
+            This is an estimate of funds that may be missing by the due date, based on the balance, confirmed bills, and estimated collections shown here. It is not a confirmed shortage. Add any shop cash or other accounts before deciding what to do.
+          </div>
         )}
+
+        {ready && gapLow! > 0 && <LoanOptionsCard lang={lang} />}
 
         {/* Quick solve shortcuts */}
         {ready && !safe && onQuickSolve && (

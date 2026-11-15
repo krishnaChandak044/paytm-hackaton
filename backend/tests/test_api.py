@@ -90,12 +90,7 @@ def test_forecast_scenarios_and_stale_version(demo_client):
         f"/v1/obligations/{item['id']}/bridge-credit",
         json={"amount_paise": 2000000, "tenure_days": 3, "flat_fee_rupees": 49},
     )
-    assert bridge_resp.status_code == 200
-    bridge_body = bridge_resp.json()
-    assert bridge_body["status"] == "disbursed"
-    assert bridge_body["disbursed_amount_paise"] == 2000000
-    assert bridge_body["loan_reference"].startswith("PAYTM-OD-")
-    assert bridge_body["forecast"]["possible_gap_high_paise"] < body["possible_gap_high_paise"]
+    assert bridge_resp.status_code == 404
 
     patch = {"expected_version": 1, "amount_paise": 2000000}
     assert demo_client.patch(f"/v1/obligations/{item['id']}", json=patch).status_code == 200

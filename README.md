@@ -5,7 +5,7 @@
 ![Paytm Munim Banner](product_images/01_cash_gap_radar.png)
 
 ### **The Forward-Looking AI Cash-Gap Radar and CFO for Indian Merchants**
-*Predicting cash shortfalls before payments are due, providing pre-approved bridge liquidity, and protecting merchant operational continuity.*
+*Making upcoming cash needs easier to see, explaining forecast uncertainty, and helping merchants compare practical next steps.*
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com)
 [![React](https://img.shields.io/badge/Frontend-React_18_%2B_Vite-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
@@ -36,7 +36,7 @@
 |---|---|---|
 | **Cash-Flow Timing Mismatches** | Mental arithmetic and static notebooks; unexpected payment defaults. | Multi-day horizon forecasting using 8-week weekday percentile ranges ($P_{10} - P_{90}$). |
 | **Supplier Default Risk** | Dishonored cheques, penalty charges, and supplier credit suspension. | Early shortfall warnings 4 to 14 days prior to due dates. |
-| **Emergency Working Capital** | High-cost informal credit markets (3% to 5% monthly interest). | Embedded 3-day micro-overdrafts repaid automatically via settlement streams. |
+| **Unclear cash position** | Mental arithmetic across balances, collections, and bills. | A dated cash outlook with evidence, estimates, and missing information clearly labelled. |
 | **Algorithmic Reliability** | Uncalibrated LLM chat responses prone to numerical hallucination. | 100% deterministic statistical calculations; AI reserved for unstructured data parsing. |
 | **Unrecorded Cash Liquidity** | Incomplete digital visibility (30% to 50% physical cash in retail drawers). | Transparent self-declaration flows for drawer cash without data corruption. |
 
@@ -126,10 +126,8 @@ graph TD
     
     G --> H[Scenario Simulator]
     G --> I[Self-Declared Drawer Cash]
-    G --> J[Paytm 3-Day Micro-Bridge Overdraft]
-    
-    J -->|Credit Facility ₹15,000| K[Gap Resolved]
-    K --> L[Soundbox Audio Notification]
+    G --> J[Review missing funds and payment details]
+    J --> K[Compare hypothetical scenarios]
 ```
 
 ### 1. Cash-Gap Radar
@@ -137,11 +135,10 @@ graph TD
 * Models conservative ($P_{10}$) and optimistic ($P_{90}$) collection ranges.
 * Generates actionable warnings 4 to 14 days in advance of obligation due dates.
 
-### 2. Paytm 3-Day Micro-Bridge Overdraft
-* Offers pre-approved, temporary bridge liquidity when organic solutions are insufficient.
-* **Facility Parameters:** Fixed flat fee of ₹49, zero compounding interest, disbursed directly to `SBI ••4912`.
-* **Automated Settlement Recovery:** Repayment recovered automatically from scheduled Friday QR settlement batches.
-* **Audit Trail:** Issues formal tracking references (`#PAYTM-OD-XXXX`) and persists non-repudiable audit logs.
+### 2. Merchant-reviewed next steps
+* Explains that a cash gap is an estimate based on the visible balance, historical collection range, confirmed obligations, and data coverage.
+* Lets the merchant review missing cash or accounts and model a supplier split or timing change as a hypothetical scenario.
+* When a gap is possible, the dashboard offers a clearly labelled link to Paytm business-loan information. Applications and eligibility are handled in Paytm; lending partners decide the offer and terms. Munim does not approve or disburse credit, initiate payments, contact suppliers, or move settlement funds.
 
 ### 3. Physical Cash & Unlinked Account Declaration
 * Addresses the realities of cash-dominant Indian retail operations.
@@ -152,7 +149,7 @@ graph TD
 * Integrates with Web Speech API for localized voice feedback in **Hindi (`hi-IN`)** and **English (`en-IN`)**.
 * **Dynamic Audio States:**
   * *Standard Warning:* Announces supplier due date and projected gap range.
-  * *Bridge Disbursed:* Announces: *"पेटीएम मुनीम सूचना: तीन दिन का ब्रिज लोन स्वीकृत। बैंक खाते में पंद्रह हज़ार रुपये जमा। गुप्ता ट्रेडर्स का भुगतान अब सुरक्षित है।"*
+  * *Forecast Reminder:* Announces the due date and estimated range, and reminds the merchant that the figures are estimates to review in the app.
 
 ### 5. Automated Recurring Debit Detection
 * Identifies 30-day periodic bank transfers from historical transaction records.
@@ -202,8 +199,8 @@ $$\text{Gap}_{\text{high}} = \max\left(0, \text{Obligation Amount} - \text{Funds
 |  |  (Liquidity Metrics)  | |  (Scenario Testing)  | |  (Store Query) | |
 |  +-----------------------+ +----------------------+ +----------------+ |
 |  +-----------------------+ +----------------------+ +----------------+ |
-|  |  PaytmBridgeCard.tsx  | | BlindSpotBanner.tsx  | | SoundboxPlayer | |
-|  | (Micro-Overdraft OD)  | | (Drawer Cash Input)  | |(Voice Engine)  | |
+|  |  ActionAdvisor.tsx  | | BlindSpotBanner.tsx  | | SoundboxPlayer | |
+|  | (Review Options)  | | (Drawer Cash Input)  | |(Voice Engine)  | |
 |  +-----------------------+ +----------------------+ +----------------+ |
 +-----------------------------------+-+----------------------------------+
                                     | HTTP / JSON (Bearer Token)
@@ -247,7 +244,6 @@ All `/v1/` endpoints enforce tenant isolation using standard Bearer token author
 | `PATCH` | `/v1/obligations/{id}` | Updates obligation amount, due date, or version status. |
 | `GET` | `/v1/obligations/{id}/forecast` | Runs 8-week statistical quantile forecast and returns gap bounds. |
 | `POST` | `/v1/obligations/{id}/scenarios` | Executes sub-50ms deterministic scenario with cash or terms modifications. |
-| `POST` | `/v1/obligations/{id}/bridge-credit` | **Disburses 3-day micro-overdraft facility**, logs audit, and updates forecast. |
 | `GET` | `/v1/obligations/{id}/advice` | Returns evaluated decision matrix options. |
 | `GET` | `/v1/obligation-candidates` | Identifies 30-day recurring debits requiring merchant confirmation. |
 | `GET` | `/v1/settlement-unmatched` | Cross-references QR transaction records with bank settlement batches. |
@@ -361,7 +357,8 @@ paytm-munim/
 │   ├── src/
 │   │   ├── components/
 │   │   │   ├── CashGapRadar.tsx         # Primary Radar card and spectrum bar
-│   │   │   ├── PaytmBridgeCard.tsx      # 3-Day Micro-Bridge facility card
+│   │   │   ├── ActionAdvisor.tsx      # Merchant-reviewed scenario options
+│   │   │   ├── LoanOptionsCard.tsx    # Optional hand-off to Paytm loan information
 │   │   │   ├── BlindSpotBanner.tsx      # Physical cash declaration interface
 │   │   │   ├── JudgePlayground.tsx      # Scenario simulation interface
 │   │   │   ├── CandidateObligations.tsx # Recurring debit confirmation interface

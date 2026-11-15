@@ -56,11 +56,6 @@ def make_advice(forecast: ForecastOut) -> Advice:
         ),
         options=[
             ActionOption(
-                code="PAYTM_BRIDGE_OVERDRAFT",
-                title="Paytm 3-Day Micro-Overdraft",
-                prerequisite="Pre-approved 3-day liquidity bridge @ ₹49 flat fee. Auto-repaid from Friday QR settlements.",
-            ),
-            ActionOption(
                 code="VERIFY_COVERAGE",
                 title="Check funds and obligations not yet connected",
                 prerequisite="Owner confirms any cash, other accounts, or earlier bills.",

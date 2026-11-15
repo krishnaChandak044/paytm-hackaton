@@ -5,7 +5,6 @@ import {
   CandidateObligation, 
   UnmatchedSettlement, 
   ScenarioParams,
-  BridgeCreditResult
 } from './types';
 import { 
   mockObligations, 
@@ -350,40 +349,6 @@ class ApiService {
     }
   }
 
-  async applyBridgeCredit(obligationId: string, amountPaise: number): Promise<BridgeCreditResult> {
-    if (!this.isLiveBackend || !this.token) {
-      const scenarioRes = await this.runScenario(obligationId, { extra_funds_paise: amountPaise });
-      return {
-        status: 'disbursed',
-        loan_reference: `PAYTM-OD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        disbursed_amount_paise: amountPaise,
-        tenure_days: 3,
-        flat_fee_paise: 4900,
-        account_credited: mockForecast.account_id || 'acct_sbi_4912',
-        forecast: scenarioRes,
-      };
-    }
-
-    const res = await fetch(`${BASE_URL}/v1/obligations/${obligationId}/bridge-credit`, {
-      method: 'POST',
-      headers: this.getHeaders(),
-      body: JSON.stringify({
-        amount_paise: amountPaise,
-        tenure_days: 3,
-        flat_fee_rupees: 49,
-      }),
-    });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.detail || 'Failed to activate bridge credit');
-    }
-    const data = await res.json();
-    return {
-      ...data,
-      forecast: adaptBackendForecast(data.forecast),
-    };
-  }
-
   async getAdvice(obligationId: string): Promise<Advice> {
     if (!this.isLiveBackend || !this.token) return mockAdvice;
     try {
@@ -391,7 +356,12 @@ class ApiService {
         headers: this.getHeaders(),
       });
       if (!res.ok) throw new Error('Advice unavailable');
-      return await res.json();
+      const advice: Advice = await res.json();
+      // Ignore the removed prototype overdraft action if an older backend is still deployed.
+      return {
+        ...advice,
+        options: advice.options.filter((option) => option.code !== 'PAYTM_BRIDGE_OVERDRAFT'),
+      };
     } catch {
       return mockAdvice;
     }

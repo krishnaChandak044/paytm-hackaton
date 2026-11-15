@@ -30,7 +30,6 @@ export const App: React.FC = () => {
   const [advice, setAdvice] = useState<Advice>(mockAdvice);
   const [candidates, setCandidates] = useState<CandidateObligation[]>(mockCandidates);
   const [unmatched, setUnmatched] = useState<UnmatchedSettlement[]>(mockUnmatched);
-  const [activeLoanRef, setActiveLoanRef] = useState<string | null>(null);
   const [addPaymentModalOpen, setAddPaymentModalOpen] = useState(false);
   const [newPaymentDraft, setNewPaymentDraft] = useState({
     payee: '',
@@ -57,7 +56,6 @@ export const App: React.FC = () => {
 
   const refreshAllData = async () => {
     try {
-      setActiveLoanRef(null);
       const obls = await api.getObligations();
       setObligations(obls);
       if (obls.length > 0) {
@@ -231,8 +229,6 @@ export const App: React.FC = () => {
       handleRunScenario(0, Math.round(baseForecast.obligation_amount_paise / 2));
       setActiveTab('simulator');
       showToast('Modeled 50% upfront split');
-    } else if (code === 'PAYTM_BRIDGE_OVERDRAFT') {
-      handleActivateBridgeCredit(1500000);
     } else if (code === 'PAYTM_EARLY_SETTLEMENT' || code === 'SETTLEMENT_REVIEW') {
       setActiveTab('actions');
     }
@@ -240,25 +236,6 @@ export const App: React.FC = () => {
 
   const handleDeclareExtra = (totalPaise: number) => {
     handleRunScenario(totalPaise);
-  };
-
-  const handleActivateBridgeCredit = async (amountPaise: number) => {
-    const activeOblId = obligations[0]?.id || 'obl-gupta-101';
-    try {
-      const res = await api.applyBridgeCredit(activeOblId, amountPaise);
-      setActiveLoanRef(res.loan_reference);
-      setCurrentForecast(res.forecast);
-      showToast(`⚡ ₹${Math.round(amountPaise / 100).toLocaleString('en-IN')} Paytm Bridge Disbursed!`);
-      return res;
-    } catch (err: any) {
-      showToast(`⚠️ Bridge activation failed: ${err.message}`);
-    }
-  };
-
-  const handleResetBridgeCredit = () => {
-    setActiveLoanRef(null);
-    setCurrentForecast(baseForecast);
-    showToast('Bridge credit cleared.');
   };
 
   return (
@@ -323,7 +300,6 @@ export const App: React.FC = () => {
           onLangChange={setLang}
           isLive={isLive}
           onToggleLive={handleToggleLive}
-          isBridgeActive={Boolean(activeLoanRef)}
           merchantId={merchantId}
           onMerchantChange={handleMerchantChange}
           balancePaise={currentForecast.balance_paise}
@@ -352,9 +328,6 @@ export const App: React.FC = () => {
                 onQuickSolve={handleQuickSolve}
                 onAddPayment={handleAddPayment}
                 onDeclareExtra={handleDeclareExtra}
-                onActivateBridgeCredit={handleActivateBridgeCredit}
-                onResetBridgeCredit={handleResetBridgeCredit}
-                activeLoanRef={activeLoanRef}
               />
               <ActionAdvisor
                 advice={advice}

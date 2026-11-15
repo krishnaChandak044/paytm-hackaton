@@ -79,19 +79,3 @@ class ForecastOut(StrictModel):
     limitations: list[str]
     evidence: list[str]
     scenario_only: bool = False
-
-
-class BridgeCreditIn(StrictModel):
-    amount_paise: int = Field(gt=0)
-    tenure_days: int = Field(default=3, ge=1, le=7)
-    flat_fee_rupees: int = Field(default=49)
-
-
-class BridgeCreditOut(StrictModel):
-    status: Literal["approved", "disbursed"] = "disbursed"
-    loan_reference: str
-    disbursed_amount_paise: int
-    tenure_days: int
-    flat_fee_paise: int
-    account_credited: str
-    forecast: ForecastOut

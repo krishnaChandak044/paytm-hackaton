@@ -84,13 +84,3 @@ export interface ScenarioParams {
   extra_funds_paise: number;
   due_date?: string;
 }
-
-export interface BridgeCreditResult {
-  status: 'disbursed';
-  loan_reference: string;
-  disbursed_amount_paise: number;
-  tenure_days: number;
-  flat_fee_paise: number;
-  account_credited: string;
-  forecast: ForecastOut;
-}

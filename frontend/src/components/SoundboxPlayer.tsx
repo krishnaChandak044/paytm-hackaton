@@ -3,10 +3,9 @@ import { Volume2, VolumeX, Sparkles } from 'lucide-react';
 
 interface SoundboxPlayerProps {
   lang: 'en' | 'hi';
-  isBridgeActive?: boolean;
 }
 
-export const SoundboxPlayer: React.FC<SoundboxPlayerProps> = ({ lang, isBridgeActive }) => {
+export const SoundboxPlayer: React.FC<SoundboxPlayerProps> = ({ lang }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const speakAlert = () => {
@@ -17,12 +16,8 @@ export const SoundboxPlayer: React.FC<SoundboxPlayerProps> = ({ lang, isBridgeAc
 
     window.speechSynthesis.cancel();
 
-    const textHindi = isBridgeActive
-      ? 'पेटीएम मुनीम सूचना: तीन दिन का ब्रिज लोन स्वीकृत। बैंक खाते में पंद्रह हज़ार रुपये जमा। गुप्ता ट्रेडर्स का भुगतान अब सुरक्षित है।'
-      : 'पेटीएम मुनीम सूचना: गुरुवार को गुप्ता ट्रेडर्स का अड़तीस हज़ार रुपये का भुगतान देय है। अनुमानित नौ हज़ार से सत्रह हज़ार रुपये की कमी हो सकती है। कृपया मुनीम ऐप देखें।';
-    const textEnglish = isBridgeActive
-      ? 'Paytm Munim Alert: 3-day micro-bridge loan approved and credited. Payment to Gupta Traders is now fully safe.'
-      : 'Paytm Munim Alert: Gupta Traders payment of 38,000 rupees is due this Thursday. Anticipated shortfall of 9,000 to 17,000 rupees. Check Munim app to review options.';
+    const textHindi = 'पेटीएम मुनीम सूचना: गुप्ता ट्रेडर्स का अड़तीस हज़ार रुपये का भुगतान चार दिन में देय है। अनुमानित कमी दस हज़ार से सत्रह हज़ार रुपये हो सकती है। यह अनुमान है, पक्का भुगतान नहीं। कृपया ऐप में जानकारी जाँचें।';
+    const textEnglish = 'Paytm Munim alert: A payment of 38,000 rupees to Gupta Traders is due in four days. The estimated gap may be 10,000 to 17,000 rupees. This is an estimate, not a confirmed shortfall. Please review the details in the app.';
 
     const utterance = new SpeechSynthesisUtterance(lang === 'hi' ? textHindi : textEnglish);
     utterance.lang = lang === 'hi' ? 'hi-IN' : 'en-IN';

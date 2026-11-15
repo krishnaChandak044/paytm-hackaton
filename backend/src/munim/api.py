@@ -1,6 +1,5 @@
 import json
 from contextlib import asynccontextmanager
-from uuid import uuid4
 
 from fastapi import Depends, FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,8 +27,6 @@ from .insights import recurring_candidates, settlement_unmatched
 from .models import AuditEvent, ForecastRun, MoneyEvent, Obligation
 from .schemas import (
     BalanceIn,
-    BridgeCreditIn,
-    BridgeCreditOut,
     ForecastOut,
     MerchantCreate,
     MerchantSettingsIn,
@@ -226,47 +223,6 @@ def scenario(
         return build_forecast(db, merchant, obligation, settings, scenario=data)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
-
-
-@app.post("/v1/obligations/{obligation_id}/bridge-credit", response_model=BridgeCreditOut)
-def bridge_credit(
-    obligation_id: str,
-    data: BridgeCreditIn,
-    p: Principal = Depends(owner),
-    db: Session = Depends(get_session),
-    settings: Settings = Depends(get_settings),
-) -> BridgeCreditOut:
-    merchant = merchant_or_404(db, p.merchant_id)
-    obligation = obligation_or_404(db, p.merchant_id, obligation_id)
-    
-    scenario_data = ScenarioIn(extra_funds_paise=data.amount_paise)
-    forecast_result = build_forecast(db, merchant, obligation, settings, scenario=scenario_data)
-    
-    loan_ref = f"PAYTM-OD-{uuid4().hex[:6].upper()}"
-    audit(
-        db,
-        p.merchant_id,
-        "owner",
-        "micro_overdraft_activated",
-        obligation.id,
-        {
-            "loan_reference": loan_ref,
-            "disbursed_paise": data.amount_paise,
-            "flat_fee_rupees": data.flat_fee_rupees,
-            "tenure_days": data.tenure_days,
-        },
-    )
-    db.commit()
-    
-    return BridgeCreditOut(
-        status="disbursed",
-        loan_reference=loan_ref,
-        disbursed_amount_paise=data.amount_paise,
-        tenure_days=data.tenure_days,
-        flat_fee_paise=data.flat_fee_rupees * 100,
-        account_credited=forecast_result.account_id or "Connected Bank A/c",
-        forecast=forecast_result,
-    )
 
 
 @app.get("/v1/obligations/{obligation_id}/advice", response_model=Advice)

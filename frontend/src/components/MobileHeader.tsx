@@ -8,7 +8,6 @@ interface MobileHeaderProps {
   onLangChange: (lang: 'en' | 'hi') => void;
   isLive: boolean;
   onToggleLive: () => void;
-  isBridgeActive?: boolean;
   merchantId: string;
   onMerchantChange: (merchantId: string) => void;
   balancePaise?: number | null;
@@ -19,7 +18,6 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
   onLangChange,
   isLive,
   onToggleLive,
-  isBridgeActive,
   merchantId,
   onMerchantChange,
   balancePaise,
@@ -72,7 +70,7 @@ export const MobileHeader: React.FC<MobileHeaderProps> = ({
               }`}
             >हिं</button>
           </div>
-          <SoundboxPlayer lang={lang} isBridgeActive={isBridgeActive} />
+          <SoundboxPlayer lang={lang} />
         </div>
       </div>
 
