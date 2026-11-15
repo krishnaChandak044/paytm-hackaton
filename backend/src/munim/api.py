@@ -52,8 +52,7 @@ from .service import (
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    if get_settings().environment != "production":
-        init_db()  # local/demo only; production uses migrations
+    init_db()  # Initialize database schema idempotently
     yield
 
 
