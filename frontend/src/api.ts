@@ -144,7 +144,7 @@ class ApiService {
           },
           body: JSON.stringify(merchant),
         });
-        if (!provisionRes.ok && provisionRes.status !== 409) {
+        if (!provisionRes.ok) {
           throw new Error(`Could not prepare demo shop ${merchant.name}`);
         }
       }

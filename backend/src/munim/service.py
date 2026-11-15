@@ -45,8 +45,13 @@ def obligation_or_404(db: Session, merchant_id: str, obligation_id: str) -> Obli
 
 
 def create_merchant(db: Session, data: MerchantCreate) -> Merchant:
-    if db.get(Merchant, data.id):
-        raise HTTPException(status_code=409, detail="Merchant already exists")
+    existing = db.get(Merchant, data.id)
+    if existing:
+        if existing.name != data.name:
+            raise HTTPException(
+                status_code=409, detail="Merchant ID already exists with a different name"
+            )
+        return existing
     item = Merchant(id=data.id, name=data.name)
     db.add(item)
     db.commit()
