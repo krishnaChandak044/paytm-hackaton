@@ -112,7 +112,15 @@ async def interpret_debit_pattern(data: DebitPatternRequest) -> DebitPatternInte
         }:
             raise ValueError("Invalid category")
         return result
-    except (httpx.HTTPError, ValueError, KeyError, TypeError) as exc:
+    except (ValueError, KeyError, TypeError, AttributeError):
+        # The model can exhaust its output budget and return content=None with HTTP 200.
+        # Preserve the observed pattern without inventing a business purpose.
+        return DebitPatternInterpretation(
+            category_hint="unclear",
+            explanation="These payments repeat, but their business purpose cannot be determined from the pattern alone. Please confirm it.",
+            confidence="low",
+        )
+    except httpx.HTTPError as exc:
         raise HTTPException(status_code=502, detail="Could not interpret this pattern. Merchant can review it manually.") from exc
 
 
